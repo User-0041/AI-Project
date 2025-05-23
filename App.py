@@ -2,13 +2,46 @@ import streamlit as st
 from SataScraper import FootballScraper
 from ModelTrainer import MatchPredictor
 from Inference import Predictor
-import pandas as pd
+from Model_Test import TestMatchPredictor
+from Scraping_Test import TestFootballScraper
 
 st.title("🏆 Match Outcome Predictor")
 
-page = st.sidebar.radio("Go to", ["Scrape Matches", "Train Model", "Predict Outcome"])
+page = st.sidebar.radio("Go to", ["Run All Tests", "Scrape Matches", "Train Model", "Predict Outcome"])
 
-if page == "Scrape Matches":
+if page == "Run All Tests":
+    st.header("🧪 Running All Tests")
+    try:
+        tester = TestFootballScraper()
+        tester.test_selenium_session()
+        st.success("✅ test_selenium_session passed.")
+    except Exception as e:
+        st.error("❌ test_selenium_session failed.")
+        st.exception(e)
+
+    try:
+        tester.test_season_url()
+        st.success("✅ test_season_url passed.")
+    except Exception as e:
+        st.error("❌ test_season_url failed.")
+        st.exception(e)
+
+    try:
+        modelTest = TestMatchPredictor()
+        modelTest.test_model()
+        st.success("✅ test_model passed.")
+    except Exception as e:
+        st.error("❌ test_model failed.")
+        st.exception(e)
+
+    try:
+        modelTest.test_prediction()
+        st.success("✅ test_prediction passed.")
+    except Exception as e:
+        st.error("❌ test_prediction failed.")
+        st.exception(e)
+
+elif page == "Scrape Matches":
     st.header("Scrape Championship Seasons")
     start = st.number_input("Start Year", min_value=2000, value=2023)
     end = st.number_input("End Year", min_value=start, max_value=2023)
