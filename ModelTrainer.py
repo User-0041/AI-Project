@@ -26,7 +26,7 @@ class MatchPredictor:
         y_encoded = self.encoder.fit_transform(y)
 
         X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42)
-        self.model = RandomForestClassifier(n_estimators=200, random_state=42)
+        self.model = RandomForestClassifier(n_estimators=2000, random_state=42)
         self.model.fit(X_train, y_train)
 
         acc = accuracy_score(y_test, self.model.predict(X_test))

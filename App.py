@@ -3,7 +3,7 @@ from SataScraper import FootballScraper
 from ModelTrainer import MatchPredictor
 from Inference import Predictor
 import pandas as pd
-
+from PreProsses import Preprocess
 st.title("🏆 Match Outcome Predictor")
 
 page = st.sidebar.radio("Go to", ["Scrape Matches", "Train Model", "Predict Outcome"])
@@ -24,22 +24,45 @@ elif page == "Train Model":
     if st.button("Train/Re-train Model"):
         trainer.train_and_save()
         st.success("Model trained and saved to disk.")
+elif page == "Predict Outcome":        
+    df = pd.read_csv("championship_all.csv")
 
-elif page == "Predict Outcome":
-    st.header("Predict Match Result")
-    model = MatchPredictor().load_or_train()
-    predictor = Predictor()
+    team_names = sorted(set(df["Team 1"]).union(set(df["Team 2"])))
 
-    st.subheader("Enter Stats for 24 players (Team 1)")
-    team1_stats = []
-    for i in range(1, 25):
-        team1_stats += [st.number_input(f"T1 P{i} Wins", 0), st.number_input(f"T1 P{i} Draws", 0), st.number_input(f"T1 P{i} Losses", 0)]
+    team1 = st.selectbox("Select Team 1", team_names)
+    team2 = st.selectbox("Select Team 2", team_names)
 
-    st.subheader("Enter Stats for 24 players (Team 2)")
-    team2_stats = []
-    for i in range(1, 25):
-        team2_stats += [st.number_input(f"T2 P{i} Wins", 0), st.number_input(f"T2 P{i} Draws", 0), st.number_input(f"T2 P{i} Losses", 0)]
+    if team1 == team2:
+        st.warning("Please choose two different teams.")
+    else:
+        if st.button("Predict Winner"):
 
-    if st.button("Predict Winner"):
-        prediction = predictor.predict(team1_stats, team2_stats)
-        st.success(f"🏅 Predicted Winner: {prediction}")
+            latest_match = df[((df["Team 1"] == team1) & (df["Team 2"] == team2)) |
+                              ((df["Team 1"] == team2) & (df["Team 2"] == team1))].iloc[-1:]
+
+            if latest_match.empty:
+                st.error("No past match data found for these teams.")
+            else:
+
+                score = latest_match["Score"].values[0]
+                st.info(f"Last recorded match score: {score}")
+
+
+                team1_stats = []
+                team2_stats = []
+
+                for i in range(1, 25):  
+                    for stat in ["Wins", "Draws", "Losses"]:
+                        team1_stats.append(latest_match[f"Team 1 Player {i} {stat}"].values[0])
+                        team2_stats.append(latest_match[f"Team 2 Player {i} {stat}"].values[0])
+                print(team1_stats,team2_stats)
+                
+                predictor = Predictor()
+                predicted_winner = predictor.predict(team1_stats, team2_stats)
+                winner_name =""
+                if predicted_winner == 0:
+                    winner_name = team1
+                elif predicted_winner == 1:
+                    winner_name = team2
+
+                st.success(f"🏅 Predicted Winner: **{winner_name}**")
