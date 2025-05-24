@@ -18,19 +18,24 @@ class MatchPredictor:
     def train_and_save(self):
         df = pd.read_csv(self.data_file)
         df = Preprocess(df).transform()
-        feature_cols = [col for col in df.columns if "Wins" in col or "Draws" in col or "Losses" in col]
+        self.encoder = LabelEncoder()
+
+        df["Team1ID"] = self.encoder.fit_transform(df["Team 1"])
+        df["Team2ID"] = self.encoder.fit_transform(df["Team 2"])
+
+        feature_cols = [col for col in df.columns if "Wins" in col or "Draws" in col or "Losses" in col] + ["Team1ID" ,"Team2ID" ]
         X = df[feature_cols]
+        
         y = df["Winner"]
 
-        self.encoder = LabelEncoder()
         y_encoded = self.encoder.fit_transform(y)
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.5, random_state=42)
         self.model = RandomForestClassifier(n_estimators=2000, random_state=42)
         self.model.fit(X_train, y_train)
 
         acc = accuracy_score(y_test, self.model.predict(X_test))
-        print(f"✅ Model trained. Accuracy: {acc:.2f}")
+        print(f"Model trained. Accuracy: {acc:.2f}")
 
         joblib.dump(self.model, self.model_path)
         joblib.dump(self.encoder, self.encoder_path)
